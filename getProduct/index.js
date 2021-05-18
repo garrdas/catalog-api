@@ -9,7 +9,6 @@ exports.handler = async (event) => {
 
     let responseBody = "";
     let statusCode = 0;
-    let statusMessage = "";
     
     const params = {
         TableName: "Catalog",
@@ -22,20 +21,17 @@ exports.handler = async (event) => {
         const data = await dynamoDb.get(params).promise();
         responseBody = JSON.stringify(data.Item);
         statusCode = 200;
-        statusMessage = "OK";
         
     } catch (err) {
         responseBody = `Unable to retieve product with id ${productid}`;
         statusCode = 403;
-        statusMessage = err.message;
     }
 
-    const response = {
+    const response = JSON.stringify({
         "statusCode": statusCode,
-        "statusMessage": statusMessage,
         "body": responseBody
-    };
+    });
 
-    console.log(response)
+    console.log(response);
     return response;
 };
