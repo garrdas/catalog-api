@@ -1,37 +1,36 @@
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 exports.handler = async (event) => {
-    console.log(event);
+  console.log(event);
 
-    const { productid } = event.pathParameters;
+  const { productid } = event.pathParameters;
 
-    let responseBody = "";
-    let statusCode = 0;
-    
-    const params = {
-        TableName: "Catalog",
-        Key: {
-            id: productid
-        }
-    };
+  let responseBody = "";
+  let statusCode = 0;
 
-    try {
-        const data = await dynamoDb.get(params).promise();
-        responseBody = JSON.stringify(data.Item);
-        statusCode = 200;
-        
-    } catch (err) {
-        responseBody = `Unable to retieve product with id ${productid}`;
-        statusCode = 403;
-    }
+  const params = {
+    TableName: "Catalog",
+    Key: {
+      id: productid,
+    },
+  };
 
-    const response = JSON.stringify({
-        "statusCode": statusCode,
-        "body": responseBody
-    });
+  try {
+    const data = await dynamoDb.get(params).promise();
+    responseBody = JSON.stringify(data.Item);
+    statusCode = 200;
+  } catch (err) {
+    responseBody = `Unable to retieve product with id ${productid}`;
+    statusCode = 403;
+  }
 
-    console.log(response);
-    return response;
+  const response = JSON.stringify({
+    statusCode: statusCode,
+    body: responseBody,
+  });
+
+  console.log(response);
+  return response;
 };
