@@ -1,44 +1,58 @@
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 exports.handler = async (event) => {
-    console.log(event);
+  console.log(event);
 
-    console.log(event.queryStringParameters);
+  console.log(event.queryStringParameters);
 
-    let { tags } = event.queryStringParameters;
-    tags = tags.split(",");
-    console.log(tags);
+  let { tags } = event.queryStringParameters;
+  tags = tags.split(",");
+  console.log(tags);
 
-    let responseBody = "";
-    let statusCode = 0;
-    let statusMessage = "";
-    
-    const params = {
-        TableName: "Catalog",
-        KeyConditionExpression: "#tags = "
-    };
+  const expressionAttrValues = {};
+  for (let tag of tags) {
+    expressionAttrValues[`:${tag}`] = { S: tag };
+  }
+  const expressionKeys = Object.keys(expressionAttrValues).join();
 
-    // try {
-    //     const data = await dynamoDb.query(params).promise();
-    //     responseBody = JSON.stringify(data.Item);
-    //     statusCode = 200;
-    //     statusMessage = "OK";
-        
-    // } catch (err) {
-    //     responseBody = `Unable to retieve product with id ${productid}`;
-    //     statusCode = 403;
-    //     statusMessage = err.message;
-    // }
+  console.log("values:", expressionAttrValues);
+  console.log("keys:", expressionKeys);
 
-    const response = {
-        statusCode: statusCode,
-        statusMessage: statusMessage,
-        body: responseBody,
+  let responseBody = "";
+  let statusCode = 0;
 
-    };
+  // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
 
-    console.log(response);
-    return response;
+  // THERE IS AN ERROR WITH 'CONTAINS' APPARENTLY, TRY 'IN'
+  const params = {
+    ExpressionAttributeNames: {
+      "#T": "Tags",
+    },
+    ExpressionAttributeValues: expressionAttrValues,
+    KeyConditionExpression: `#T contains (${expressionKeys})`,
+    TableName: "Catalog",
+  };
+
+  console.log("params:", params);
+
+  try {
+    const data = await dynamoDb.query(params).promise();
+    console.log("data:", data)
+    responseBody = JSON.stringify(data.Item);
+    statusCode = 200;
+  } catch (err) {
+    console.log(err)
+    responseBody = "Query failed.";
+    statusCode = 403;
+  }
+
+  const response = {
+    statusCode: statusCode,
+    body: responseBody,
+  };
+
+  console.log(response);
+  return response;
 };
